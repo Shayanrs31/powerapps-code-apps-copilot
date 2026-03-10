@@ -21,9 +21,9 @@ npx power-apps init
 ## Daily Dev Commands
 
 ```bash
-npm run dev              # start local dev server
-npm run build            # production build
-npx power-apps push      # publish to environment
+npm run dev          # start local dev server
+npm run build        # production build
+npx power-apps push  # publish to environment
 ```
 
 ---
@@ -39,9 +39,9 @@ npx power-apps push      # publish to environment
 
 ```bash
 # Discover what's available
-pac connection list                                          # find connectionId
-pac code list-datasets -a <apiId> -c <connectionId>         # list datasets
-pac code list-tables -a <apiId> -c <connectionId> -d <ds>   # list tables
+pac connection list                                              # find connectionId
+pac code list-datasets -a <apiId> -c <connectionId>            # list datasets
+pac code list-tables -a <apiId> -c <connectionId> -d <ds>      # list tables
 
 # Remove a data source
 pac code delete-data-source -a <apiName> -ds <dataSourceName>
@@ -51,18 +51,20 @@ pac code delete-data-source -a <apiName> -ds <dataSourceName>
 
 ## Using Generated Services
 
-```typescript
-import { ServiceFactory } from '@microsoft/power-apps';
-import { Office365UsersService } from './services/Office365UsersService';
+Generated services expose **static methods** — there is no `ServiceFactory`:
 
-// In a hook
-const service = ServiceFactory.getService(Office365UsersService);
-const me = await service.MyProfile_V2();
+```typescript
+import { Office365UsersService } from '../generated/services/Office365UsersService';
+
+// Call connector action — static method, no factory needed
+const result = await Office365UsersService.MyProfile_V2();
+const me = result.data;
 ```
 
 **Rule**: Never call connector endpoints directly. Always use generated services.
 
 **Rule**: If the connector schema changes, regenerate:
+
 ```bash
 pac code delete-data-source -a <apiName> -ds <dataSourceName>
 pac code add-data-source -a <apiName> -c <connectionId>
@@ -74,17 +76,18 @@ pac code add-data-source -a <apiName> -c <connectionId>
 
 ```
 <app-name>/
-├── power.config.json        ← DO NOT EDIT — SDK metadata
+├── power.config.json          ← DO NOT EDIT — SDK metadata
 ├── src/
 │   ├── App.tsx
 │   ├── main.tsx
-│   ├── services/            ← DO NOT EDIT — auto-generated connector services
-│   │   └── MyConnectorService.ts
-│   ├── models/              ← DO NOT EDIT — auto-generated connector models
-│   │   └── MyConnectorModel.ts
-│   ├── hooks/               ← your custom hooks wrapping services
-│   ├── components/          ← your React components
-│   └── pages/               ← your page-level components
+│   ├── generated/
+│   │   ├── services/          ← DO NOT EDIT — auto-generated connector services
+│   │   │   └── MyConnectorService.ts
+│   │   └── models/            ← DO NOT EDIT — auto-generated connector models
+│   │       └── MyConnectorModel.ts
+│   ├── hooks/                 ← your custom hooks wrapping services
+│   ├── components/            ← your React components
+│   └── pages/                 ← your page-level components
 ├── public/
 ├── index.html
 ├── vite.config.ts
@@ -120,81 +123,81 @@ pac code add-data-source -a <apiName> -cr <connectionReferenceLogicalName> -s <s
 Required once per environment (by admin in Power Platform Admin Center):
 
 1. Environments → select environment → Settings → Product → Features
-2. Toggle **Enable code apps** → ON
-3. Save
+2. 2. Toggle **Enable code apps** → ON
+   3. 3. Save
+     
+      4. ---
+     
+      5. ## PAC CLI Auth
+     
+      6. ```bash
+         pac auth create                                  # interactive browser login
+         pac auth list                                    # list profiles
+         pac env select --environment <environmentId>     # pick environment
+         pac env who                                      # verify current env
+         ```
 
----
+         ---
 
-## PAC CLI Auth
+         ## Local Dev — Browser Note (post Dec 2025)
 
-```bash
-pac auth create                              # interactive browser login
-pac auth list                                # list profiles
-pac env select --environment <environmentId> # pick environment
-pac env who                                  # verify current env
-```
+         Chrome and Edge block public-origin → localhost requests by default. When the browser shows a "local network access" permission prompt after opening the Local Play URL, **grant it**. This is expected behaviour, not an error.
 
----
+         ---
 
-## Local Dev — Browser Note (post Dec 2025)
+         ## Known Platform Limitations
 
-Chrome and Edge block public-origin → localhost requests by default. When the browser shows a "local network access" permission prompt after opening the Local Play URL, **grant it**. This is expected behaviour, not an error.
+         | Not supported | Notes |
+         |---|---|
+         | Power Platform Git integration | Use standard Git via PAC CLI solution export/import |
+         | Power Apps mobile app | Web only |
+         | Power Apps for Windows | Web only |
+         | SharePoint Forms integration | N/A |
+         | Storage SAS IP restriction | N/A |
+         | Power BI data integration | Embed via Power Apps Visual in Power BI instead |
 
----
+         ---
 
-## Known Platform Limitations
+         ## Microsoft Learn MCP Tools (for AI agents)
 
-| Not supported | Notes |
-|---|---|
-| Power Platform Git integration | Use standard Git via PAC CLI solution export/import |
-| Power Apps mobile app | Web only |
-| Power Apps for Windows | Web only |
-| SharePoint Forms integration | N/A |
-| Storage SAS IP restriction | N/A |
-| Power BI data integration | Embed via Power Apps Visual in Power BI instead |
+         Available in this workspace for real-time doc lookup:
 
----
+         ```
+         microsoft_docs_search("Power Apps code apps <topic>")
+         microsoft_docs_fetch("https://learn.microsoft.com/en-us/power-apps/developer/code-apps/<page>")
+         microsoft_code_sample_search("Power Apps code apps <topic>")
+         ```
 
-## Microsoft Learn MCP Tools (for AI agents)
+         Key pages:
+         - `overview` — what code apps are
+         - - `architecture` — runtime architecture deep-dive
+           - - `how-to/create-an-app-from-scratch` — PAC CLI quickstart
+             - - `how-to/npm-quickstart` — npm CLI quickstart (preferred)
+               - - `how-to/connect-to-data` — all connector types
+                 - - `how-to/connect-to-dataverse` — Dataverse-specific
+                   - - `system-limits-configuration` — rate limits and quotas
+                    
+                     - ---
 
-Available in this workspace for real-time doc lookup:
+                     ## Custom VS Code Agents (this workspace)
 
-```
-microsoft_docs_search("Power Apps code apps <topic>")
-microsoft_docs_fetch("https://learn.microsoft.com/en-us/power-apps/developer/code-apps/<page>")
-microsoft_code_sample_search("Power Apps code apps <topic>")
-```
+                     | Agent | Use for |
+                     |---|---|
+                     | **PA Plan** | Architecture, data flow, connector strategy, ALM design |
+                     | **PA Code** | Implementing components, hooks, data sources, CLI operations |
+                     | **PA Review** | Code quality, security, DLP compliance, best practices audit |
+                     | **PA Document** | READMEs, connector guides, deployment runbooks |
 
-Key pages:
-- `overview` — what code apps are
-- `architecture` — runtime architecture deep-dive
-- `how-to/create-an-app-from-scratch` — PAC CLI quickstart
-- `how-to/npm-quickstart` — npm CLI quickstart (preferred)
-- `how-to/connect-to-data` — all connector types
-- `how-to/connect-to-dataverse` — Dataverse-specific
-- `system-limits-configuration` — rate limits and quotas
+                     Activate from the VS Code Copilot chat input → click the agent picker → select agent.
 
----
+                     ---
 
-## Custom VS Code Agents (this workspace)
+                     ## Useful Links
 
-| Agent | Use for |
-|---|---|
-| **PA Plan** | Architecture, data flow, connector strategy, ALM design |
-| **PA Code** | Implementing components, hooks, data sources, CLI operations |
-| **PA Review** | Code quality, security, DLP compliance, best practices audit |
-| **PA Document** | READMEs, connector guides, deployment runbooks |
-
-Activate from the VS Code Copilot chat input → click the agent picker → select agent.
-
----
-
-## Useful Links
-
-- [Overview](https://learn.microsoft.com/en-us/power-apps/developer/code-apps/overview)
-- [Architecture](https://learn.microsoft.com/en-us/power-apps/developer/code-apps/architecture)
-- [npm Quickstart](https://learn.microsoft.com/power-apps/developer/code-apps/how-to/npm-quickstart)
-- [Connect to data](https://learn.microsoft.com/power-apps/developer/code-apps/how-to/connect-to-data)
-- [Connect to Dataverse](https://learn.microsoft.com/power-apps/developer/code-apps/how-to/connect-to-dataverse)
-- [GitHub samples & templates](https://github.com/microsoft/PowerAppsCodeApps)
-- [npm package `@microsoft/power-apps`](https://www.npmjs.com/package/@microsoft/power-apps)
+                     - [Overview](https://learn.microsoft.com/en-us/power-apps/developer/code-apps/overview)
+                     - - [Architecture](https://learn.microsoft.com/en-us/power-apps/developer/code-apps/architecture)
+                       - - [npm Quickstart](https://learn.microsoft.com/power-apps/developer/code-apps/how-to/npm-quickstart)
+                         - - [Connect to data](https://learn.microsoft.com/power-apps/developer/code-apps/how-to/connect-to-data)
+                           - - [Connect to Dataverse](https://learn.microsoft.com/power-apps/developer/code-apps/how-to/connect-to-dataverse)
+                             - - [GitHub samples & templates](https://github.com/microsoft/PowerAppsCodeApps)
+                               - - [npm package `@microsoft/power-apps`](https://www.npmjs.com/package/@microsoft/power-apps)
