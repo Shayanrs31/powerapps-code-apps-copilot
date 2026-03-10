@@ -1,0 +1,50 @@
+{
+  // Power Apps Code Apps — workspace settings
+
+  // Tell VS Code where to look for custom agent files
+  "chat.agentFilesLocations": {
+    ".github/agents": true
+  },
+
+  // Show custom agents in the Copilot chat dropdown
+  "chat.agent.enabled": true,
+
+  // Keep customizations UI visible (includes custom agents entry points)
+  "chat.customizationsMenu.enabled": true,
+
+  // Enable hooks for auto-formatting and validation
+  "chat.useHooks": true,
+
+  // Skills location
+  "chat.skillsLocations": {
+    ".github/skills": true
+  },
+
+  // TypeScript
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // Editor
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // Exclude generated Power Apps SDK files from search/editing
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  },
+  "files.readonlyInclude": {
+    "**/src/services/*.ts": true,
+    "**/src/models/*.ts": true,
+    "**/power.config.json": true
+  },
+
+  // Terminal
+  "terminal.integrated.defaultProfile.windows": "Git Bash"
+}

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment files — never commit these
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PAC CLI auth (user-specific, environment-specific)
+# Note: power.config.json is project-level and should be committed
+.pac/
+
+# npm/pnpm
+*.tsbuildinfo
