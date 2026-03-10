@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repo is a launchpad for **Power Apps Code Apps** — React + Vite + TypeScript single-page applications hosted inside Power Platform with managed Entra SSO, 1,500+ connectors, and DLP enforcement. It ships with GitHub Copilot customization (agents, hooks, and instructions) to enforce Power Apps Code App conventions and safe edits.
+A ready-to-clone developer workspace for building Power Apps Code Apps. Includes Copilot custom agents for planning, coding, reviewing, and documenting, plus automated hooks that block edits to generated files and auto-format on save.
 
 ### Architecture
 
