@@ -16,13 +16,15 @@ This workspace contains **Power Apps Code Apps**: custom Single-Page Application
 
 Generated files — **do not edit manually**:
 - `power.config.json` — metadata used by CLI and SDK
-- `src/services/*.ts` — auto-generated connector service files
-- `src/models/*.ts` — auto-generated connector model files
+- `src/generated/services/*.ts` — auto-generated connector service files
+- `src/generated/models/*.ts` — auto-generated connector model files
 
 ## CLI Commands
 
 ```bash
 # Preferred: npm CLI (SDK v1.0.4+)
+# ⚠️ Run ALL npx power-apps commands from INSIDE the project folder (e.g. my-tasks/)
+# The `power-apps` binary lives in node_modules/.bin — npx won't find it from a parent directory
 npx power-apps init --displayName "My App" --environmentId <envId>
 npm run dev                  # local dev server
 npm run build && npx power-apps push   # publish
@@ -49,6 +51,10 @@ pac code list-tables -a <apiId> -c <connectionId> -d <datasetName>
 - Re-generate data sources by deleting and re-adding if schema changes
 - Local dev in Chrome/Edge (post Dec 2025): grant "local network access" when prompted
 - End-users need a **Power Apps Premium license**
+- **Before suggesting PAC CLI installation**, always check if it's already present:
+  - Common install path: `%LOCALAPPDATA%\Microsoft\PowerAppsCLI\pac.cmd` (VS Code extension / MSI)
+  - Test with `pac help` (NOT `pac --version` — that flag is invalid)
+  - The npm `pac` package is broken on Node 18+ — do not suggest `npm install -g pac`
 
 ## Microsoft Learn MCP Tools
 
