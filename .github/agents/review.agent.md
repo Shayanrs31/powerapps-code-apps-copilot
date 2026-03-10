@@ -60,6 +60,7 @@ You are an expert Power Apps Code App reviewer. Your goal is to identify bugs, s
 - [ ] No `any` types in service/model integration code
 - [ ] Strict null checks handled for optional connector response fields
 - [ ] Enums used for status/type fields from Dataverse
+- [ ] `select` arrays in `getAll`/`getById` calls use `satisfies (keyof Model)[]` — prevents invalid Dataverse field names that compile fine but fail at runtime with HTTP 400 (`Could not find a property named '...'`). Flag any `string[]` typed `select` as **HIGH**.
 
 ## Review Output Format
 
