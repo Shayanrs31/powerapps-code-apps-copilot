@@ -49,6 +49,25 @@ export function UserProfile() {
 
 Never put connector calls directly inside a component or `useEffect` in a component.
 
+## Hook Pattern (required for all connector calls)
+
+```typescript
+export function useTasks() {
+  const [tasks, setTasks] = useState<Tasks[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void TasksService.getAll({ filter: 'statecode eq 0', top: 500 })
+      .then(r => setTasks((r.data as Tasks[]) ?? []))
+      .catch(e => setError((e as Error).message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { tasks, loading, error };
+}
+```
+
 ## Data Source Commands
 
 ```bash
@@ -75,20 +94,6 @@ npx power-apps push   # publish
 ```typescript
 const safe = term.replace(/'/g, "''");  // always sanitise filter strings
 const r = await AccountsService.getAll({ filter: `contains(name,'${safe}')`, top: 20 });
-```
-
-## Error Handling
-
-```typescript
-async function fetchData() {
-  try {
-    return await service.Operation();
-  } catch (err) {
-    // Power Apps host surfaces auth errors — only handle business logic errors here
-    console.error('Operation failed:', err);
-    throw err;
-  }
-}
 ```
 
 ## Tool Discovery — Check Before Installing

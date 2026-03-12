@@ -24,60 +24,36 @@ To update generated files: delete the data source and re-add it via CLI.
 
 ---
 
-## How Copilot works in this repo
+## AI Tools
 
-All customization lives under `.github/` and is versioned with the repo.
+This workspace is configured for both **GitHub Copilot** and **Claude Code**. See [AI-SETUP.md](AI-SETUP.md) for the full explanation of how each tool works, what files each reads, and how to test the setup.
 
-### How it flows during an edit session
+### GitHub Copilot
 
-```
-You write a prompt in Copilot
-        ↓
-.github/copilot-instructions.md         — always loaded (workspace context)
-        ↓
-.github/instructions/power-apps-code-apps.instructions.md
-                                         — loaded when editing .ts / .tsx / .json
-        ↓
-hooks.json PreToolUse                   — blocks edits to generated files before they happen
-        ↓
-Copilot makes the edit
-        ↓
-hooks.json PostToolUse                  — Prettier formats the file automatically
-```
+Workspace instructions load automatically:
+- [.github/copilot-instructions.md](.github/copilot-instructions.md) — always-on workspace context (architecture, CLI conventions, key rules)
+- [.github/instructions/power-apps-code-apps.instructions.md](.github/instructions/power-apps-code-apps.instructions.md) — code rules loaded when editing `.ts`, `.tsx`, and `.json` files
 
-### Workspace instructions
+### Claude Code
 
-- [.github/copilot-instructions.md](.github/copilot-instructions.md) applies to all files and sets workspace-wide guidance and CLI conventions.
-- [.github/instructions/power-apps-code-apps.instructions.md](.github/instructions/power-apps-code-apps.instructions.md) applies to TypeScript, TSX, and JSON files and defines strict rules like not editing generated files.
+Agents, skills, and hooks live in `.claude/` and are versioned with the repo.
 
-### Custom agents
+| Agent | When to use |
+| --- | --- |
+| **PA Plan** | Before writing code — architecture, component tree, connector strategy, ALM design |
+| **PA Code** | Implementing features, hooks, and connector integrations |
+| **PA Review** | Code review against an 8-point checklist (security, DLP, generated files, ALM, TypeScript) |
+| **PA Document** | READMEs, runbooks, and connector documentation |
 
-Invoke with `@PA Plan`, `@PA Code`, etc. in Copilot Chat.
+Invoke agents naturally in Claude chat — e.g. _"plan the connector strategy for a leave-request app"_ — or ask explicitly — _"use the PA Review agent to check my hooks folder"_.
 
-| Agent | File | When to use |
-| --- | --- | --- |
-| PA Plan | [.github/agents/plan.agent.md](.github/agents/plan.agent.md) | Before writing code — architecture, component tree, connector strategy, ALM design. Has a handoff button → PA Code. |
-| PA Code | [.github/agents/code.agent.md](.github/agents/code.agent.md) | Implementing features and connector integrations |
-| PA Review | [.github/agents/review.agent.md](.github/agents/review.agent.md) | Code review against an 8-point checklist (security, DLP, generated files, ALM, TypeScript) |
-| PA Document | [.github/agents/document.agent.md](.github/agents/document.agent.md) | READMEs, runbooks, and connector documentation |
-| PA Test | [.github/agents/test.agent.md](.github/agents/test.agent.md) | Smoke-test that agents are loaded and responding |
+**Skill:** type `/power-apps-code-apps` in Claude chat to load patterns, SDK usage, and CLI commands.
 
-### Hooks
+**Hooks** (`.claude/settings.json`):
+- **format-on-save** — runs Prettier automatically after any `.ts` / `.tsx` / `.json` edit
+- **block generated files** — prevents edits to `power.config.json` and `src/generated/**`
 
-Hooks are defined in [.github/hooks/hooks.json](.github/hooks/hooks.json) and run automatically during Copilot tool use.
-
-- **format-on-save**: PostToolUse hook that runs Prettier on `.ts` / `.tsx` / `.json` edits.
-- **prevent-generated-file-edits**: PreToolUse hook that blocks edits to `power.config.json`, `src/services/*.ts`, and `src/models/*.ts`.
-
-If Prettier is not available, run:
-```bash
-npm install
-```
-
-### Skills
-
-The Power Apps skill is a quick reference for patterns and commands:
-- [.github/skills/power-apps/SKILL.md](.github/skills/power-apps/SKILL.md)
+If Prettier is not available, run `npm install` inside your project folder.
 
 ## Prerequisites
 - Power Platform environment with code apps enabled: https://learn.microsoft.com/power-apps/developer/code-apps/overview#enable-code-apps-on-a-power-platform-environment
