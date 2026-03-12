@@ -1,0 +1,90 @@
+.user-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  transition: box-shadow 0.15s ease;
+}
+
+.user-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Avatar */
+.user-card__avatar {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0078d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-card__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-card__initials {
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Info */
+.user-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.user-card__name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-card__title {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #555;
+}
+
+.user-card__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #777;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.user-card__label {
+  font-weight: 600;
+  color: #444;
+}
+
+.user-card__email {
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: #0078d4;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-card__email:hover {
+  text-decoration: underline;
+}

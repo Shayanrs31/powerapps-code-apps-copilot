@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "appId": null,
+  "appDisplayName": "Team Directory",
+  "region": "prod",
+  "environmentId": "97e86bf6-a106-4872-acd8-c052eb6ab7ec",
+  "description": " ",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {
+    "1e29859a-b70b-4662-8788-b25b0a6ecb0d": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_office365users",
+      "displayName": "Office 365 Users",
+      "dataSources": [
+        "office365users"
+      ],
+      "dataSets": {}
+    }
+  },
+  "databaseReferences": {}
+}
