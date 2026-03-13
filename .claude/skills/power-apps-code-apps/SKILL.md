@@ -1,72 +1,173 @@
 ---
 name: power-apps-code-apps
-description: Provides patterns, commands, and conventions for building Power Apps Code Apps (React + Vite + TypeScript on Power Platform). Use when working with pac code commands, @microsoft/power-apps SDK, npx power-apps, Dataverse or connector data sources, or deploying React/Vite apps to Power Platform.
+description: "Use this skill for Power Apps Code Apps (code-first apps, pac code, Power Apps SDK apps). Covers: scaffolding with Vite template, pac code init / npx power-apps init, adding connector data sources, local dev, build and push via pac code push / npx power-apps push. Also covers architecture (Power Apps client library, power.config.json, generated models/services), environment admin setup, ALM with connection references, licensing, and known limitations. Trigger when the user mentions code apps, @microsoft/power-apps npm package, pac code commands, deploying React/Vite apps to Power Platform, or connecting JS/TS apps to Dataverse or Power Platform connectors."
+compatibility: "Requires Microsoft Learn MCP (microsoft_docs_fetch, microsoft_docs_search). Docs: https://learn.microsoft.com/en-us/power-apps/developer/code-apps/overview"
 ---
 
-# Power Apps Code Apps
+# Power Apps Code Apps Skill
 
-React + Vite + TypeScript SPAs deployed to Power Platform with managed Entra auth, 1,500+ connectors, and DLP enforcement.
+## What Are Code Apps?
 
-## Architecture
+Power Apps Code Apps let developers build custom **Single-Page Applications** (React, Vue, Vite, or any JS/TS framework) and host them inside Power Platform while getting:
+
+- Microsoft Entra authentication and authorization (managed by the host)
+- Access to 1,500+ Power Platform connectors callable directly from JavaScript/TypeScript
+- Managed platform policies: DLP enforcement, Conditional Access, sharing limits, App Quarantine
+- Simplified ALM and deployment via PAC CLI or npm CLI
+
+End-users need a **Power Apps Premium license** to run code apps.
+
+---
+
+## Architecture Overview
+
+Three components collaborate at runtime:
 
 | Layer | Role |
 |---|---|
-| Your SPA (React + Vite + TypeScript) | UI and business logic |
-| `@microsoft/power-apps` client library | Connector APIs; drives `power.config.json` |
-| Power Apps host | Manages Entra SSO, app loading, error surfacing |
+| Your code (SPA) | UI and business logic; calls generated typed services |
+| Power Apps client library (`@microsoft/power-apps`) | Exposes connector APIs; manages models/services; provides `power.config.json` |
+| Power Apps host | Manages Entra auth, app loading, user-facing error messages |
 
-## Generated Files — Never Edit Manually
+At development time, two additional actors participate:
 
-```
-power.config.json                     ← CLI metadata
-src/generated/services/*.ts           ← auto-generated connector services
-src/generated/models/*.ts             ← auto-generated connector models
-src/generated/models/CommonModels.ts  ← shared IGetAllOptions / IGetOptions
-```
+- **`power.config.json`** — generated metadata file; do not edit manually; used by both CLI and SDK
+- **PAC CLI / npm CLI** — scaffolds, manages connectors, pushes to environment
 
-To update: delete and re-add the data source via CLI.
+When `pac code add-data-source` is run, the SDK auto-generates a **typed TypeScript model and service file** for the connector (e.g. `Office365UsersModel`, `Office365UsersService`). If the connector schema changes, delete and re-add the data source to regenerate.
 
-## Quick Start
+---
+
+## Prerequisites
+
+### Developer tooling
+
+- **Node.js v22 or later** — PAC CLI 2.x requires Node.js ≥ v22; Node 20 LTS will crash with libuv/trackScenario errors
+- Git
+- PAC CLI (`pac`) — still needed for auth and environment selection in the legacy path
+  - Check it's present: `pac help` (NOT `pac --version` — that flag is invalid)
+  - Common install path: `%LOCALAPPDATA%\Microsoft\PowerAppsCLI\pac.cmd`
+  - Do **not** use `npm install -g pac` — broken on Node 18+
+- For SDK v1.0.4+: the npm CLI (`npx power-apps ...`) replaces `pac code` commands (pac code commands will be deprecated)
+
+### Environment setup (admin)
+
+1. Go to Power Platform admin center → Manage → Environments → select environment
+2. Settings → Product → Features
+3. Toggle **Enable code apps** on
+4. Save
+
+---
+
+## Development Workflow
+
+### Option A: Legacy PAC CLI path
 
 ```bash
-# Scaffold (run from parent folder)
-npx degit github:microsoft/PowerAppsCodeApps/templates/vite <app-name>
-cd <app-name>
-npm install
-npx power-apps init --displayName "My App" --environmentId <envId>
+# 1. Scaffold from Vite template
+npx degit github:microsoft/PowerAppsCodeApps/templates/vite my-app
+cd my-app
 
-# Daily (run from INSIDE the project folder)
-npm run dev               # local dev server
-npm run build             # production build
-npx power-apps push       # publish to environment
+# 2. Authenticate and select environment
+pac auth create
+pac env select --environment <environmentId>
+
+# 3. Install dependencies and initialise
+npm install
+pac code init --displayname "My App"
+
+# 4. Run locally
+npm run dev
+# Open the "Local Play" URL in the same browser profile as your tenant
+
+# 5. Build and push
+npm run build | pac code push
 ```
+
+### Option B: New npm CLI path (SDK v1.0.4+, preferred)
+
+```bash
+# 1. Scaffold
+npx degit github:microsoft/PowerAppsCodeApps/templates/vite my-app
+cd my-app
+
+# 2. Install and initialise (handles auth automatically)
+npm install
+npx power-apps init --displayName "My App" --environmentId <environmentId>
+# Or interactive: npx power-apps init
+
+# 3. Run locally
+npm run dev
+
+# 4. Build and push
+npm run build
+npx power-apps push
+```
+
+**Note on local dev in Chrome/Edge (post Dec 2025):** Browsers now block public-origin requests to localhost by default. Grant the local network access permission when prompted, or set enterprise policy. For embedded iframe scenarios add `allow="local-network-access"`.
+
+---
+
+## Project Structure
+
+```
+<app-name>/
+├── power.config.json             ← DO NOT EDIT — SDK metadata
+├── src/
+│   ├── App.tsx
+│   ├── main.tsx
+│   ├── generated/                ← DO NOT EDIT — auto-generated by CLI
+│   │   ├── services/             ← connector service files
+│   │   ├── models/               ← connector model files
+│   │   └── models/CommonModels.ts  ← IGetAllOptions / IGetOptions live here
+│   ├── hooks/                    ← your custom hooks wrapping services
+│   ├── components/               ← your React components
+│   └── pages/                    ← your page-level components
+├── public/
+├── index.html
+├── vite.config.ts
+└── package.json
+```
+
+---
 
 ## SDK Imports
 
+`@microsoft/power-apps` has **no root export** — always use subpaths:
+
 ```typescript
-// No root export — use subpaths only
+// User context — returns Promise<IContext>, must be awaited
 import { getContext } from '@microsoft/power-apps/app';
-import type { IOperationResult } from '@microsoft/power-apps/data';
 
 const context = await getContext();
 const { objectId, userPrincipalName, fullName } = context.user;
+
+// IOperationResult type (for reference — services return this)
+// { success: boolean, data: T, error?: Error, skipToken?: string, count?: number }
+import type { IOperationResult } from '@microsoft/power-apps/data';
 ```
 
-## Generated Service Pattern
+> ⚠️ `import { ... } from '@microsoft/power-apps'` (root) will fail at runtime — always use the subpath.
 
-Static methods — there is no `ServiceFactory`:
+---
+
+## Generated Service & Hook Pattern
+
+Generated services expose **static methods** — there is no `ServiceFactory`:
 
 ```typescript
 import { TasksService } from '../generated/services/TasksService';
 import type { Tasks } from '../generated/models/TasksModel';
 
-const result = await TasksService.getAll({ filter: 'statecode eq 0', top: 500 });
-const tasks = (result.data as Tasks[]) ?? [];
+// IGetAllOptions is NOT in the SDK package — import from generated CommonModels
+import type { IGetAllOptions } from '../generated/models/CommonModels';
 ```
 
-## Hook Pattern (required for all connector calls)
+**All connector calls must go through hooks** — never call services directly inside components:
 
 ```typescript
+import { useState, useEffect } from 'react';
+
 export function useTasks() {
   const [tasks, setTasks] = useState<Tasks[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,25 +184,277 @@ export function useTasks() {
 }
 ```
 
-## Key Conventions
+---
 
-- Use **connection references** (not raw connection IDs) for ALM-safe deployments
-- Regenerate data sources by deleting and re-adding if schema changes
-- Local dev Chrome/Edge (post Dec 2025): grant "local network access" when prompted
-- End-users need a **Power Apps Premium license**
-- Check for PAC CLI before suggesting install: `pac help` from `%LOCALAPPDATA%\Microsoft\PowerAppsCLI\pac.cmd`
-- Do **not** suggest `npm install -g pac` — broken on Node 18+
+## Connector / Data Source Management
 
-## Microsoft Learn MCP Tools
+### Add a non-tabular connector (e.g. Office 365 Users)
 
-The `microsoft-learn` MCP server is configured in `.vscode/mcp.json`. Use it for all Power Platform research:
-
+```bash
+pac code add-data-source -a "shared_office365users" -c <connectionId>
 ```
-microsoft_docs_search("Power Apps code apps <topic>")
-microsoft_docs_fetch("https://learn.microsoft.com/en-us/power-apps/developer/code-apps/<page>")
-microsoft_code_sample_search("Power Apps code apps <topic>")
+
+### Add a tabular connector (e.g. SQL Server)
+
+```bash
+pac code add-data-source -a "shared_sql" -c <connectionId> -t <tableId> -d <datasetName>
 ```
+
+### Add Dataverse
+
+```bash
+pac code add-data-source -a dataverse -t <table-logical-name>
+```
+
+### Discover available datasets and tables
+
+```bash
+pac code list-datasets -a <apiId> -c <connectionId>
+pac code list-tables -a <apiId> -c <connectionId> -d <datasetName>
+pac code list-sql-stored-procedures -c <connectionId> -d <datasetName>
+```
+
+### Delete a data source
+
+```bash
+pac code delete-data-source -a <apiName> -ds <dataSourceName>
+```
+
+### Use connection references (ALM-safe, PAC CLI v1.51.1+)
+
+Connection references decouple the app from user-specific connections, enabling portability across Dev/Test/Prod:
+
+```bash
+# List connection references in a solution
+pac code list-connection-references -env <environmentURL> -s <solutionID>
+
+# Add data source via connection reference
+pac code add-data-source -a <apiName> -cr <connectionReferenceLogicalName> -s <solutionID>
+```
+
+Get the solution ID from:
+- `pac solution list --json | ConvertFrom-Json | Format-Table`
+- Power Apps → Solutions → URL contains `solutions/<solutionId>`
+
+> ⚠️ **Known Bug: `-cr` fails with custom solution ID** — See Known Issues section below.
 
 ---
 
-For complete CLI command reference, data source patterns, ALM, Dataverse quirks, and known limitations, see [reference.md](reference.md).
+## Key PAC CLI Commands Reference
+
+| Command | Description |
+|---|---|
+| `pac code init` | Initialise a code app in the current directory |
+| `pac code push` | Publish a new version |
+| `pac code run` | Run local server for connection loading |
+| `pac code add-data-source` | Add a connector data source |
+| `pac code delete-data-source` | Remove a connector data source |
+| `pac code list` | List code apps in the current environment |
+| `pac code list-connection-references` | List connection references in a solution |
+| `pac code list-datasets` | List datasets for a connection |
+| `pac code list-tables` | List tables for a dataset |
+| `pac code list-sql-stored-procedures` | List SQL stored procedures |
+
+---
+
+## Dataverse Generated Model Quirks
+
+- **Numeric columns** (`percentcomplete`, etc.) are typed as `string` — use `Number()` when mapping to numeric form state
+- **State/status/priority fields** are enum literal types (e.g. `Tasksstatecode = 0 | 1 | 2`), not plain `number`
+- **Lookup name fields** (e.g. `owneridname`) are typed directly on the interface — do not cast to `Record<string, unknown>`
+- **`@odata.bind` write pattern**: generated field name is PascalCase (e.g. `"RegardingObjectId@odata.bind"`); cast to `Partial<Omit<XxxBase, 'id'>>` when passing to `update()`
+- **`IGetAllOptions`** is NOT exported from the SDK package — it lives in `src/generated/models/CommonModels.ts`
+- Use `satisfies (keyof Model)[]` for `select` arrays — prevents invalid Dataverse field names that compile but fail at runtime with HTTP 400
+
+---
+
+## Authentication
+
+Power Apps host manages Entra SSO automatically. The user is already authenticated when the app loads.
+
+- **Never implement custom auth**
+- **Never call MSAL directly**
+- **Never store tokens** — the host handles token lifecycle
+- Use `getContext()` from `@microsoft/power-apps/app` to read user identity (objectId, UPN, fullName)
+
+---
+
+## Managed Platform Capability Support
+
+| Capability | Notes |
+|---|---|
+| Connector consent dialog | End-users see consent for connector permissions |
+| Sharing limits | Follows canvas app sharing limits |
+| App Quarantine | Supported |
+| DLP enforcement | Enforced at app launch |
+| Conditional Access | Supported per-app |
+| Admin consent suppression | Works for Microsoft OAuth and custom OAuth connectors |
+| Tenant isolation | Supported |
+| Azure B2B (external users) | Supported, same as canvas apps |
+| Health metrics | Available in admin center and maker portal |
+
+---
+
+## Known Limitations
+
+- No Storage SAS IP restriction support
+- No Power Platform Git integration
+- Not supported in Power Apps mobile app or Power Apps for Windows
+- No Power BI data integration (PowerBIIntegration function) — can be embedded in Power BI via Power Apps Visual
+- No SharePoint Forms integration
+
+---
+
+## Known Issues & Fixes
+
+### PAC CLI crashes on Windows: `trackScenario` / `httpClient` / libuv error
+
+**Error (variant 1 — `trackScenario`):**
+```
+TypeError: Cannot read properties of undefined (reading 'trackScenario')
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+```
+
+**Error (variant 2 — `httpClient`):**
+```
+TypeError: Cannot read properties of undefined (reading 'httpClient')
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+```
+
+**Cause:** Both are the same underlying PAC CLI bug on Windows — a libuv async handle is closed while still in use. Both variants are triggered by Node.js version mismatch (Node < v22 with PAC CLI 2.x) or certain PAC CLI versions.
+
+**Fix — check Node version first:**
+```powershell
+node --version   # must be >= 22
+```
+
+If Node is < 22, update it. If already on v22+ and the crash persists, switch to the npm CLI:
+
+```powershell
+npm run build
+npx power-apps push
+```
+
+If not yet initialised with the npm CLI:
+```powershell
+npx power-apps init --environmentId <your-environment-id>
+```
+
+The environment ID is available in `power.config.json` under `"environmentId"`.
+
+---
+
+### `pac code add-data-source -cr` fails: "Failed to resolve connection ID for reference"
+
+**Error:**
+```
+Error during CLI execution: Error: Failed to resolve connection ID for reference '<cr_logicalname>' in solution '<solutionId>'
+```
+
+**Cause:** PAC CLI resolves the connection reference by filtering the Dataverse `connectionreference` table using the `solutionid` field on the CR record itself. This `solutionid` is a system-internal GUID that does **not** necessarily match the Default Solution ID or any solution visible in `pac solution list`. Passing your custom solution's GUID (or even the Default Solution ID) will fail unless it happens to match the `solutionid` stored on the CR record.
+
+**Fix (verified):** Query the CR record directly via the Dataverse Web API to get the exact `solutionid` value, then pass that as `-s`:
+
+**Step 1 — Get the `solutionid` from the CR record:**
+```
+GET https://<your-org>.crm11.dynamics.com/api/data/v9.2/connectionreferences
+    ?$filter=connectionreferencelogicalname eq '<cr_logicalname>'
+    &$select=connectionreferencelogicalname,solutionid,connectionid
+```
+
+Open this URL in a browser while logged into your tenant. Note the `solutionid` value in the response — this is a system GUID that may not appear in `pac solution list`.
+
+**Step 2 — Pass that exact `solutionid` as `-s`:**
+```powershell
+pac code add-data-source -a <apiName> -cr <connectionReferenceLogicalName> -s <solutionid-from-web-api>
+```
+
+**Example:** If the Web API returns `"solutionid": "fd140aae-4df4-11dd-bd17-0019b9312238"`, use that value even if it differs by only one character from the Default Solution ID (`fd140aaf-...`) and does not appear in `pac solution list`.
+
+> ⚠️ **Note on cmd vs PowerShell:** `pac solution list --json | ConvertFrom-Json` uses PowerShell cmdlets and will fail in Command Prompt (cmd). Either run in PowerShell, or use `pac solution list --json` in cmd and inspect the raw JSON output manually.
+
+**Verify success:** After running the command, check `power.config.json`. A successful connection reference add produces a `connectionReferences` entry with `xrmConnectionReferenceLogicalName` present (NOT a raw connection `id`):
+
+```json
+"connectionReferences": {
+  "40a4db06-675f-430e-8d28-ff4bf7af182d": {
+    "id": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+    "displayName": "Azure Key Vault",
+    "dataSources": ["keyvault"],
+    "authenticationType": "oauthDefault",
+    "dataSets": {},
+    "xrmConnectionReferenceLogicalName": "cr289_azkvconn01"
+  }
+}
+```
+
+If `power.config.json` instead shows a raw `connectionId` string (no `connectionReferences` key), the connection reference was not used — the fallback direct connection path was taken.
+
+---
+
+### `MSCRM.IncludeMipSensitivityLabel` TypeScript build error
+
+**Error:**
+```
+error TS1005: ';' expected  (or similar parse error in MicrosoftDataverseService.ts)
+```
+
+**Cause:** `pac code add-data-source` regenerates the typed service file and reintroduces `MSCRM.IncludeMipSensitivityLabel` (dot notation in a TypeScript identifier), which causes a build error.
+
+**Fix:** Add a `postgenerate` script to `package.json` to auto-patch the generated file after every data source regeneration:
+
+```json
+"scripts": {
+  "postgenerate": "(Get-Content .\\src\\generated\\services\\MicrosoftDataverseService.ts -Raw) -replace 'MSCRM\\.IncludeMipSensitivityLabel', 'MSCRM_IncludeMipSensitivityLabel' | Set-Content .\\src\\generated\\services\\MicrosoftDataverseService.ts -NoNewline -Encoding UTF8"
+}
+```
+
+This runs automatically after any `npm run generate` (or equivalent) and prevents the issue from recurring.
+
+---
+
+## ALM Patterns
+
+Use **connection references** instead of direct connection IDs for production apps. This ensures the app is solution-aware and deployable across environments without manual connection rebinding.
+
+Standard ALM flow:
+1. Build and test in Dev using `npm run dev`
+2. Push to Dev environment: `npm run build && npx power-apps push` (or pac equivalent)
+3. Export solution containing the code app and connection references
+4. Import solution into Test/Prod; connection references resolve per-environment connections automatically
+
+---
+
+## Useful Resources
+
+- Overview: https://learn.microsoft.com/en-us/power-apps/developer/code-apps/overview
+- Architecture: https://learn.microsoft.com/en-us/power-apps/developer/code-apps/architecture
+- Quickstart (PAC CLI): https://learn.microsoft.com/power-apps/developer/code-apps/how-to/create-an-app-from-scratch
+- Quickstart (npm CLI): https://learn.microsoft.com/power-apps/developer/code-apps/how-to/npm-quickstart
+- Connect to data: https://learn.microsoft.com/power-apps/developer/code-apps/how-to/connect-to-data
+- Connect to Dataverse: https://learn.microsoft.com/power-apps/developer/code-apps/how-to/connect-to-dataverse
+- GitHub samples and templates: https://github.com/microsoft/PowerAppsCodeApps
+- npm package: https://www.npmjs.com/package/@microsoft/power-apps
+
+---
+
+## When to Fetch More Detail
+
+If a user asks for something not covered above, use the Microsoft Learn MCP tool:
+
+```
+microsoft_docs_fetch("https://learn.microsoft.com/en-us/power-apps/developer/code-apps/<specific-page>")
+```
+
+Or search:
+
+```
+microsoft_docs_search("Power Apps code apps <topic>")
+```
+
+Pages of particular interest for deeper dives:
+
+- `how-to/connect-to-data` — full connector setup walkthrough including SQL stored procs
+- `how-to/connect-to-dataverse` — Dataverse-specific steps
+- `system-limits-configuration` — rate limits and quotas
+- `how-to/npm-quickstart` — full npm CLI walkthrough
